@@ -1,7 +1,7 @@
 namespace PharmacyStock.Core.Domain;
 
 /// <summary>
-/// Represents the possible statuses of a prescription.
+/// Represents possible prescription statuses.
 /// </summary>
 public enum PrescriptionStatus
 {
