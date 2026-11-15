@@ -1,9 +1,17 @@
 namespace PharmacyStock.Core.Domain;
 
+/// <summary>
+/// Клас для роботи з рецептами в аптеці.
+/// </summary>
 public class PrescriptionRecord
 {
     private readonly List<string[]> _lines = new();
 
+    /// <summary>
+    /// Створює новий рецепт.
+    /// </summary>
+    /// <param name="id">Номер рецепта.</param>
+    /// <param name="patientName">Ім'я пацієнта.</param>
     public PrescriptionRecord(string id, string patientName)
     {
         Id = id;
@@ -11,14 +19,24 @@ public class PrescriptionRecord
         CreatedAt = DateTime.Now;
     }
 
+    /// <summary>Номер рецепта.</summary>
     public string Id { get; private set; }
 
+    /// <summary>Ім'я пацієнта.</summary>
     public string PatientName { get; private set; }
 
+    /// <summary>Поточний стан рецепта.</summary>
     public int Status { get; private set; }
 
+    /// <summary>Дата створення рецепта.</summary>
     public DateTime CreatedAt { get; private set; }
 
+    /// <summary>
+    /// Шукає рецепт за його номером.
+    /// </summary>
+    /// <param name="prescriptions">Список рецептів.</param>
+    /// <param name="prescriptionId">Номер для пошуку.</param>
+    /// <returns>Знайдений рецепт або null.</returns>
     public static PrescriptionRecord? FindById(
         List<PrescriptionRecord> prescriptions, string prescriptionId)
     {
@@ -33,6 +51,12 @@ public class PrescriptionRecord
         return null;
     }
 
+    /// <summary>
+    /// Додає лікарський препарат до рецепта.
+    /// </summary>
+    /// <param name="medicineCode">Код препарату.</param>
+    /// <param name="quantity">Кількість.</param>
+    /// <param name="unitPrice">Ціна препарату.</param>
     public void AddLine(string medicineCode, int quantity, decimal unitPrice)
     {
         string[] line = new string[3];
@@ -43,6 +67,11 @@ public class PrescriptionRecord
         _lines.Add(line);
     }
 
+    /// <summary>
+    /// Обчислює загальну вартість препаратів.
+    /// </summary>
+    /// <param name="isRegularPatient">Ознака постійного пацієнта.</param>
+    /// <returns>Загальна сума до сплати.</returns>
     public decimal CalculateTotal(bool isRegularPatient)
     {
         decimal total = 0m;
@@ -80,6 +109,11 @@ public class PrescriptionRecord
         return Math.Round(total, 2);
     }
 
+    /// <summary>
+    /// Змінює стан рецепта.
+    /// </summary>
+    /// <param name="newStatus">Новий стан.</param>
+    /// <returns>True, якщо стан змінено, інакше false.</returns>
     public bool TryChangeStatus(int newStatus)
     {
         if (Status == 0 && newStatus == 1)
@@ -103,6 +137,10 @@ public class PrescriptionRecord
         return false;
     }
 
+    /// <summary>
+    /// Перевіряє правильність даних рецепта.
+    /// </summary>
+    /// <returns>Результат перевірки рецепта.</returns>
     public bool IsValid()
     {
         if (Id != null && Id != string.Empty
@@ -116,6 +154,10 @@ public class PrescriptionRecord
         return false;
     }
 
+    /// <summary>
+    /// Формує текстовий звіт про рецепт.
+    /// </summary>
+    /// <returns>Текст звіту.</returns>
     public string BuildReport()
     {
         string report = string.Empty;
