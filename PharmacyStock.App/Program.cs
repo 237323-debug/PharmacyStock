@@ -3,13 +3,13 @@ using PharmacyStock.Core.Domain;
 
 Console.OutputEncoding = Encoding.UTF8;
 
-var z = new recept("R-1001", "Іваненко");
+var prescription = new PrescriptionRecord("R-1001", "Черевко");
 
-z.Add("MED-1", 3, 250m);
-z.Add("MED-2", 12, 90m);
+prescription.AddLine("MED-1", 3, 250m);
+prescription.AddLine("MED-2", 12, 90m);
 
-Console.WriteLine(z.ProcessData(false));
-Console.WriteLine(z.ProcessData(true));
-Console.WriteLine(z.Ck());
-Console.WriteLine(z.Chg(1));
-Console.Write(z.Rep());
+Console.WriteLine(prescription.CalculateTotal(false));
+Console.WriteLine(prescription.CalculateTotal(true));
+Console.WriteLine(prescription.IsValid());
+Console.WriteLine(prescription.TryChangeStatus(1));
+Console.Write(prescription.BuildReport());
