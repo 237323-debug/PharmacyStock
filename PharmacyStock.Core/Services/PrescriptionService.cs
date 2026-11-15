@@ -1,3 +1,4 @@
+using System.Globalization;
 using PharmacyStock.Core.Abstractions;
 using PharmacyStock.Core.Domain;
 
@@ -10,22 +11,28 @@ public sealed class PrescriptionService
 {
     private readonly IPrescriptionRepository _repository;
     private readonly IPricingPolicy _pricing;
+    private readonly INotifier _notifier;
 
     /// <summary>
     /// Initializes a new instance of the
     /// <see cref="PrescriptionService"/> class.
     /// </summary>
     /// <param name="repository">Prescription repository.</param>
-    /// <param name="pricing">Medicine pricing policy.</param>
+    /// <param name="pricing">Pricing policy.</param>
+    /// <param name="notifier">Patient notifier.</param>
     public PrescriptionService(
         IPrescriptionRepository repository,
-        IPricingPolicy pricing)
+        IPricingPolicy pricing,
+        INotifier notifier)
     {
         _repository = repository
             ?? throw new ArgumentNullException(nameof(repository));
 
         _pricing = pricing
             ?? throw new ArgumentNullException(nameof(pricing));
+
+        _notifier = notifier
+            ?? throw new ArgumentNullException(nameof(notifier));
     }
 
     /// <summary>
@@ -40,10 +47,10 @@ public sealed class PrescriptionService
     }
 
     /// <summary>
-    /// Calculates the total prescription amount.
+    /// Calculates the total using the selected pricing policy.
     /// </summary>
     /// <param name="prescription">Prescription to calculate.</param>
-    /// <returns>Total amount.</returns>
+    /// <returns>Calculated amount.</returns>
     public decimal TotalOf(Prescription prescription)
     {
         ArgumentNullException.ThrowIfNull(prescription);
@@ -56,5 +63,24 @@ public sealed class PrescriptionService
         }
 
         return total;
+    }
+
+    /// <summary>
+    /// Notifies a patient about a prescription.
+    /// </summary>
+    /// <param name="prescription">Prescription.</param>
+    /// <param name="recipient">Patient email.</param>
+    public void NotifyPatient(
+        Prescription prescription, string recipient)
+    {
+        ArgumentNullException.ThrowIfNull(prescription);
+        ArgumentException.ThrowIfNullOrWhiteSpace(recipient);
+
+        string message = string.Format(
+            CultureInfo.InvariantCulture,
+            "Рецепт № {0} збережено.",
+            prescription.Id);
+
+        _notifier.Notify(recipient, message);
     }
 }

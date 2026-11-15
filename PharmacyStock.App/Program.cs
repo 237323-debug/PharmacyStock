@@ -3,6 +3,7 @@ using System.Text;
 using PharmacyStock.Core.Abstractions;
 using PharmacyStock.Core.Documents;
 using PharmacyStock.Core.Domain;
+using PharmacyStock.Core.Notifications;
 using PharmacyStock.Core.Pricing;
 using PharmacyStock.Core.Reporting;
 using PharmacyStock.Core.Services;
@@ -44,14 +45,26 @@ printer.Print(report);
 
 Console.WriteLine();
 
-IPrescriptionRepository repository =
-    new InMemoryPrescriptionRepository();
+Dictionary<string, IPricingPolicy> policies = new()
+{
+    ["regular"] = new DiscountPricingPolicy(0.05m),
+    ["vip"] = new VipPricingPolicy(),
+    ["staff"] = new DiscountPricingPolicy(0.30m),
+};
+
+string patientType = "regular";
 
 IPricingPolicy pricing =
-    new DiscountPricingPolicy(0.05m);
+    policies.GetValueOrDefault(patientType)
+    ?? new RegularPricingPolicy();
+
+InMemoryPrescriptionRepository repository = new();
+
+INotifier notifier =
+    new TextWriterNotifier(Console.Out);
 
 PrescriptionService service =
-    new(repository, pricing);
+    new(repository, pricing, notifier);
 
 Prescription prescription =
     new(2, 1, DateTimeOffset.UtcNow);
@@ -67,3 +80,19 @@ Console.WriteLine(string.Format(
     CultureInfo.GetCultureInfo("uk-UA"),
     "Сума за рецептом: {0:F2}",
     total));
+
+service.NotifyPatient(prescription, "i@ex.com");
+
+ArchivedPrescription archived = new(
+    prescription,
+    DateOnly.FromDateTime(DateTime.Today));
+
+Console.WriteLine(
+    "Архівний рецепт № " + archived.Id.ToString(
+        CultureInfo.InvariantCulture));
+
+string csv = PrescriptionCsvReport.BuildCsv(
+    repository.GetAll());
+
+Console.WriteLine("CSV-звіт:");
+Console.Write(csv);
