@@ -1,5 +1,6 @@
 using System.Text;
 using PharmacyStock.Core.Documents;
+using PharmacyStock.Core.Reporting;
 
 Console.OutputEncoding = Encoding.UTF8;
 
@@ -30,5 +31,7 @@ TotalRequest request = new(
 TotalResult result =
     DocumentTotalCalculator.Calculate(request);
 
-Console.WriteLine(result.Total);
-Console.WriteLine(result.Status);
+string report = DocumentReport.TextOf(request, result);
+
+DocumentReportPrinter printer = new(Console.Out);
+printer.Print(report);

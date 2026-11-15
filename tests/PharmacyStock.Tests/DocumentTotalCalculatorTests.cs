@@ -1,18 +1,19 @@
 using PharmacyStock.Core.Documents;
+using PharmacyStock.Core.Reporting;
 using Xunit;
 
 namespace PharmacyStock.Tests;
 
 /// <summary>
-/// Tests prescription totals and input validation.
+/// Tests prescription calculations and reports.
 /// </summary>
 public sealed class DocumentTotalCalculatorTests
 {
     /// <summary>
-    /// Checks the total for a regular patient.
+    /// Checks the regular patient amount.
     /// </summary>
     [Fact]
-    public void Calculate_RegularPatient_Returns1292()
+    public void CalculateRegularPatientReturns1292()
     {
         TotalRequest request = BuildSampleRequest();
 
@@ -27,7 +28,7 @@ public sealed class DocumentTotalCalculatorTests
     /// Checks delivery for a small prescription.
     /// </summary>
     [Fact]
-    public void Calculate_SmallPrescription_AddsDelivery()
+    public void CalculateSmallPrescriptionAddsDelivery()
     {
         TotalRequest request = new(
             DocumentId: 2,
@@ -55,10 +56,10 @@ public sealed class DocumentTotalCalculatorTests
     }
 
     /// <summary>
-    /// Checks that an empty prescription throws an exception.
+    /// Checks that empty medicine lines are rejected.
     /// </summary>
     [Fact]
-    public void Calculate_NoLines_ThrowsArgument()
+    public void CalculateNoLinesThrowsArgument()
     {
         TotalRequest request = BuildSampleRequest() with
         {
@@ -70,10 +71,10 @@ public sealed class DocumentTotalCalculatorTests
     }
 
     /// <summary>
-    /// Checks that zero quantity throws an exception.
+    /// Checks that zero quantity is rejected.
     /// </summary>
     [Fact]
-    public void Calculate_ZeroQuantity_ThrowsRange()
+    public void CalculateZeroQuantityThrowsRange()
     {
         TotalRequest request = BuildSampleRequest() with
         {
@@ -90,6 +91,66 @@ public sealed class DocumentTotalCalculatorTests
 
         Assert.Throws<ArgumentOutOfRangeException>(() =>
             DocumentTotalCalculator.Calculate(request));
+    }
+
+    /// <summary>
+    /// Checks that the report contains the calculated total.
+    /// </summary>
+    [Fact]
+    public void TextOfContainsTotalLine()
+    {
+        TotalRequest request = BuildSampleRequest();
+
+        TotalResult result =
+            DocumentTotalCalculator.Calculate(request);
+
+        string text = DocumentReport.TextOf(request, result);
+
+        Assert.Contains("Разом: 1292.70", text);
+    }
+
+    /// <summary>
+    /// Checks that the report contains patient data.
+    /// </summary>
+    [Fact]
+    public void TextOfContainsPatientAndStatus()
+    {
+        TotalRequest request = BuildSampleRequest();
+
+        TotalResult result =
+            DocumentTotalCalculator.Calculate(request);
+
+        string text = DocumentReport.TextOf(request, result);
+
+        Assert.Contains("Пацієнт: Іваненко", text);
+        Assert.Contains("Стан: Approved", text);
+    }
+
+    /// <summary>
+    /// Checks that the printer writes a report.
+    /// </summary>
+    [Fact]
+    public void PrintWritesReportToOutput()
+    {
+        StringWriter writer = new();
+        DocumentReportPrinter printer = new(writer);
+
+        printer.Print("Разом: 10.00");
+
+        Assert.Contains("10.00", writer.ToString());
+    }
+
+    /// <summary>
+    /// Checks that an empty report is rejected.
+    /// </summary>
+    [Fact]
+    public void PrintEmptyReportThrowsArgument()
+    {
+        StringWriter writer = new();
+        DocumentReportPrinter printer = new(writer);
+
+        Assert.Throws<ArgumentException>(() =>
+            printer.Print(string.Empty));
     }
 
     private static TotalRequest BuildSampleRequest()
