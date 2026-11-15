@@ -4,6 +4,13 @@ public class PrescriptionRecord
 {
     private readonly List<string[]> _lines = new();
 
+    public PrescriptionRecord(string id, string patientName)
+    {
+        Id = id;
+        PatientName = patientName;
+        CreatedAt = DateTime.Now;
+    }
+
     public string Id { get; private set; }
 
     public string PatientName { get; private set; }
@@ -12,11 +19,18 @@ public class PrescriptionRecord
 
     public DateTime CreatedAt { get; private set; }
 
-    public PrescriptionRecord(string id, string patientName)
+    public static PrescriptionRecord? FindById(
+        List<PrescriptionRecord> prescriptions, string prescriptionId)
     {
-        Id = id;
-        PatientName = patientName;
-        CreatedAt = DateTime.Now;
+        for (int i = 0; i < prescriptions.Count; i++)
+        {
+            if (prescriptions[i].Id == prescriptionId)
+            {
+                return prescriptions[i];
+            }
+        }
+
+        return null;
     }
 
     public void AddLine(string medicineCode, int quantity, decimal unitPrice)
@@ -91,7 +105,7 @@ public class PrescriptionRecord
 
     public bool IsValid()
     {
-        if (Id != null && Id != ""
+        if (Id != null && Id != string.Empty
             && PatientName != null && PatientName.Length > 2
             && _lines.Count > 0 && _lines.Count < 100
             && Status >= 0 && Status <= 3)
@@ -104,7 +118,7 @@ public class PrescriptionRecord
 
     public string BuildReport()
     {
-        string report = "";
+        string report = string.Empty;
 
         for (int i = 0; i < _lines.Count; i++)
         {
@@ -118,19 +132,5 @@ public class PrescriptionRecord
 
         report += "Разом: " + CalculateTotal(false) + "\n";
         return report;
-    }
-
-    public static PrescriptionRecord? FindById(
-        List<PrescriptionRecord> prescriptions, string prescriptionId)
-    {
-        for (int i = 0; i < prescriptions.Count; i++)
-        {
-            if (prescriptions[i].Id == prescriptionId)
-            {
-                return prescriptions[i];
-            }
-        }
-
-        return null;
     }
 }
