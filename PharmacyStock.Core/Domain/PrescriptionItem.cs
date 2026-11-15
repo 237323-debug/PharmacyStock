@@ -1,17 +1,19 @@
 namespace PharmacyStock.Core.Domain;
 
-/// <summary>Препарат у рецепті.</summary>
+/// <summary>
+/// Represents a medicine item in a prescription.
+/// </summary>
 public sealed class PrescriptionItem
 {
-    /// <summary>Код препарату.</summary>
+    /// <summary>Gets the medicine code.</summary>
     public string MedicineCode { get; init; } = string.Empty;
 
-    /// <summary>Кількість препарату.</summary>
+    /// <summary>Gets the medicine quantity.</summary>
     public int Quantity { get; init; }
 
-    /// <summary>Ціна за одиницю.</summary>
+    /// <summary>Gets the unit price.</summary>
     public decimal UnitPrice { get; init; }
 
-    /// <summary>Загальна вартість позиції.</summary>
+    /// <summary>Gets the total amount.</summary>
     public decimal Amount => Quantity * UnitPrice;
 }

@@ -1,20 +1,22 @@
 namespace PharmacyStock.Core.Domain;
 
-/// <summary>Можливі стани рецепта.</summary>
+/// <summary>
+/// Represents the possible statuses of a prescription.
+/// </summary>
 public enum PrescriptionStatus
 {
-    /// <summary>Новий рецепт.</summary>
+    /// <summary>New prescription.</summary>
     New = 0,
 
-    /// <summary>Підтверджений рецепт.</summary>
+    /// <summary>Approved prescription.</summary>
     Approved = 1,
 
-    /// <summary>Препарати видано.</summary>
+    /// <summary>Dispensed prescription.</summary>
     Dispensed = 2,
 
-    /// <summary>Рецепт скасовано.</summary>
+    /// <summary>Cancelled prescription.</summary>
     Cancelled = 3,
 
-    /// <summary>Термін рецепта завершився.</summary>
-    Expired = 4
+    /// <summary>Expired prescription.</summary>
+    Expired = 4,
 }

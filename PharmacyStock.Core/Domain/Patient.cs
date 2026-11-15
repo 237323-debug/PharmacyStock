@@ -1,14 +1,18 @@
 namespace PharmacyStock.Core.Domain;
 
-/// <summary>Інформація про пацієнта.</summary>
+/// <summary>
+/// Represents a pharmacy patient.
+/// </summary>
 public sealed class Patient
 {
-    /// <summary>Номер пацієнта.</summary>
+    /// <summary>Gets the patient identifier.</summary>
     public int Id { get; init; }
 
-    /// <summary>Повне ім'я пацієнта.</summary>
+    /// <summary>Gets the patient's full name.</summary>
     public string FullName { get; init; } = string.Empty;
 
-    /// <summary>Наявність пільг.</summary>
+    /// <summary>
+    /// Gets a value indicating whether the patient has benefits.
+    /// </summary>
     public bool HasBenefits { get; init; }
 }

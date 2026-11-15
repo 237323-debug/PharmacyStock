@@ -1,34 +1,40 @@
 namespace PharmacyStock.Core.Domain;
 
-/// <summary>Рецепт пацієнта.</summary>
+/// <summary>
+/// Represents a patient's prescription.
+/// </summary>
 public sealed class Prescription
 {
     private readonly List<PrescriptionItem> _items = new();
 
-    /// <summary>Номер рецепта.</summary>
+    /// <summary>Gets the prescription identifier.</summary>
     public int Id { get; init; }
 
-    /// <summary>Номер пацієнта.</summary>
+    /// <summary>Gets the patient identifier.</summary>
     public int PatientId { get; init; }
 
-    /// <summary>Поточний стан рецепта.</summary>
+    /// <summary>Gets or sets the prescription status.</summary>
     public PrescriptionStatus Status { get; set; } = PrescriptionStatus.New;
 
-    /// <summary>Дата створення.</summary>
+    /// <summary>Gets the prescription creation date.</summary>
     public DateTimeOffset CreatedAt { get; init; }
 
-    /// <summary>Список препаратів.</summary>
+    /// <summary>Gets the prescription items.</summary>
     public IReadOnlyList<PrescriptionItem> Items => _items;
 
-    /// <summary>Додає препарат до рецепта.</summary>
-    /// <param name="item">Препарат для додавання.</param>
+    /// <summary>
+    /// Adds a medicine item to the prescription.
+    /// </summary>
+    /// <param name="item">The medicine item.</param>
     public void AddItem(PrescriptionItem item)
     {
         _items.Add(item);
     }
 
-    /// <summary>Обчислює загальну вартість.</summary>
-    /// <returns>Загальна сума.</returns>
+    /// <summary>
+    /// Calculates the total prescription amount.
+    /// </summary>
+    /// <returns>The total amount.</returns>
     public decimal Total()
     {
         decimal sum = 0m;
