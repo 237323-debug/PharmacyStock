@@ -4,12 +4,12 @@ using PharmacyStock.Core.Documents;
 namespace PharmacyStock.Core.Legacy;
 
 /// <summary>
-/// Processes prescriptions using the legacy algorithm.
+/// Processes prescriptions using the legacy interface.
 /// </summary>
 public static class LegacyPrescriptionProcessor
 {
     /// <summary>
-    /// Calculates the prescription amount and updates its status.
+    /// Calculates the prescription total using separate subprograms.
     /// </summary>
     /// <param name="prescriptionId">Prescription identifier.</param>
     /// <param name="patientName">Patient name.</param>
@@ -18,11 +18,11 @@ public static class LegacyPrescriptionProcessor
     /// <param name="lines">Medicine lines.</param>
     /// <param name="createdAt">Creation date.</param>
     /// <param name="couponCode">Discount coupon.</param>
-    /// <param name="status">Current prescription status.</param>
+    /// <param name="status">Current status.</param>
     /// <param name="printToConsole">Console output indicator.</param>
     /// <param name="deliveryPrice">Delivery price.</param>
-    /// <param name="newStatus">Resulting prescription status.</param>
-    /// <returns>Calculated prescription amount.</returns>
+    /// <param name="newStatus">Resulting status.</param>
+    /// <returns>The calculated total.</returns>
     public static decimal Process(
         int prescriptionId,
         string patientName,
@@ -44,74 +44,28 @@ public static class LegacyPrescriptionProcessor
         ArgumentOutOfRangeException.ThrowIfNegative(
             deliveryPrice);
 
-        newStatus = status;
-        decimal total = 0m;
+        decimal total = DocumentTotalCalculator.SubtotalOf(lines);
 
-        for (int i = 0; i < lines.Count; i++)
-        {
-            decimal sum = lines[i].Quantity * lines[i].UnitPrice;
+        total -= DocumentTotalCalculator.ClientDiscountOf(
+            total, isRegularPatient);
 
-            if (lines[i].Quantity >= 10)
-            {
-                sum *= 0.95m;
-            }
+        total -= DocumentTotalCalculator.VolumeDiscountOf(total);
 
-            total += sum;
-        }
+        total -= DocumentTotalCalculator.CouponDiscountOf(
+            total, couponCode);
 
-        if (isRegularPatient)
-        {
-            total *= 0.93m;
-        }
+        total -= DocumentTotalCalculator.WeekendDiscountOf(
+            total, createdAt);
 
-        if (total > 5000)
-        {
-            total *= 0.9m;
-        }
-        else if (total > 2000)
-        {
-            total *= 0.95m;
-        }
+        total += DocumentTotalCalculator.DeliveryFeeOf(
+            total, deliveryPrice);
 
-        if (couponCode == "SALE10")
-        {
-            total -= total * 0.1m;
-        }
-        else if (couponCode == "MINUS200" && total > 1000)
-        {
-            total -= 200;
-        }
+        total = status == DocumentStatus.Cancelled
+            ? 0m
+            : Math.Round(Math.Max(total, 0m), 2);
 
-        if (createdAt.DayOfWeek == DayOfWeek.Sunday)
-        {
-            total *= 0.98m;
-        }
-
-        if (total < 1000)
-        {
-            total += deliveryPrice;
-        }
-
-        if (total < 0)
-        {
-            total = 0;
-        }
-
-        total = Math.Round(total, 2);
-
-        if (status == DocumentStatus.New && total > 0)
-        {
-            newStatus = DocumentStatus.Approved;
-        }
-        else if (status == DocumentStatus.Approved)
-        {
-            newStatus = DocumentStatus.Dispensed;
-        }
-        else if (status == DocumentStatus.Cancelled)
-        {
-            newStatus = DocumentStatus.Cancelled;
-            total = 0m;
-        }
+        newStatus = DocumentTotalCalculator.NextStatusOf(
+            status, total);
 
         if (printToConsole)
         {
@@ -119,10 +73,10 @@ public static class LegacyPrescriptionProcessor
             Console.WriteLine("Пацієнт: " + patientName);
             Console.WriteLine("Пошта: " + patientEmail);
 
-            for (int i = 0; i < lines.Count; i++)
+            foreach (MedicineLine line in lines)
             {
                 Console.WriteLine(
-                    lines[i].MedicineCode + " x " + lines[i].Quantity);
+                    line.MedicineCode + " x " + line.Quantity);
             }
 
             Console.WriteLine(
