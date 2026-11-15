@@ -1,10 +1,11 @@
+using PharmacyStock.Core.Documents;
 using PharmacyStock.Core.Legacy;
 using Xunit;
 
 namespace PharmacyStock.Tests;
 
 /// <summary>
-/// Tests the original prescription processing behavior.
+/// Tests prescription processing and validation.
 /// </summary>
 public sealed class LegacyPrescriptionProcessorTests
 {
@@ -38,17 +39,17 @@ public sealed class LegacyPrescriptionProcessorTests
             lines,
             new DateOnly(2026, 3, 10),
             string.Empty,
-            "New",
+            DocumentStatus.New,
             false,
             60m,
-            out string nextStatus);
+            out DocumentStatus nextStatus);
 
         Assert.Equal(1292.70m, total);
-        Assert.Equal("Approved", nextStatus);
+        Assert.Equal(DocumentStatus.Approved, nextStatus);
     }
 
     /// <summary>
-    /// Checks that delivery is included for a small prescription.
+    /// Checks delivery for a small prescription.
     /// </summary>
     [Fact]
     public void Process_SmallPrescription_AddsDelivery()
@@ -71,35 +72,41 @@ public sealed class LegacyPrescriptionProcessorTests
             lines,
             new DateOnly(2026, 3, 10),
             "SALE10",
-            "Approved",
+            DocumentStatus.Approved,
             false,
             60m,
-            out string nextStatus);
+            out DocumentStatus nextStatus);
 
         Assert.Equal(420m, total);
-        Assert.Equal("Dispensed", nextStatus);
+        Assert.Equal(DocumentStatus.Dispensed, nextStatus);
     }
 
     /// <summary>
-    /// Checks the original behavior for an empty prescription.
+    /// Checks that an empty prescription throws an exception.
     /// </summary>
     [Fact]
-    public void Process_NoLines_ReturnsMinusOne()
+    public void Process_NoLines_ThrowsArgument()
     {
-        decimal total = LegacyPrescriptionProcessor.Process(
-            3,
-            "Коваль",
-            "k@ex.com",
-            false,
-            new List<MedicineLine>(),
-            new DateOnly(2026, 3, 10),
-            string.Empty,
-            "New",
-            false,
-            60m,
-            out string nextStatus);
+        List<MedicineLine> lines = new();
 
-        Assert.Equal(-1m, total);
-        Assert.Equal("New", nextStatus);
+        Assert.Throws<ArgumentException>(() =>
+            DocumentGuards.EnsureLinesValid(lines));
+    }
+
+    /// <summary>
+    /// Checks that zero quantity throws an exception.
+    /// </summary>
+    [Fact]
+    public void Process_ZeroQuantity_ThrowsRange()
+    {
+        MedicineLine line = new()
+        {
+            MedicineCode = "MED-1",
+            Quantity = 0,
+            UnitPrice = 100m,
+        };
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            DocumentGuards.EnsureLineValid(line));
     }
 }

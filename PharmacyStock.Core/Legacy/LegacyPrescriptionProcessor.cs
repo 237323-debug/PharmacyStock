@@ -1,4 +1,5 @@
 using System.Globalization;
+using PharmacyStock.Core.Documents;
 
 namespace PharmacyStock.Core.Legacy;
 
@@ -30,59 +31,24 @@ public static class LegacyPrescriptionProcessor
         List<MedicineLine> lines,
         DateOnly createdAt,
         string couponCode,
-        string status,
+        DocumentStatus status,
         bool printToConsole,
         decimal deliveryPrice,
-        out string newStatus)
+        out DocumentStatus newStatus)
     {
+        DocumentGuards.EnsureHeaderValid(
+            prescriptionId, patientName, patientEmail);
+
+        DocumentGuards.EnsureLinesValid(lines);
+
+        ArgumentOutOfRangeException.ThrowIfNegative(
+            deliveryPrice);
+
         newStatus = status;
         decimal total = 0m;
 
-        if (prescriptionId <= 0)
-        {
-            Console.WriteLine("Помилка: номер рецепта");
-            return -1m;
-        }
-
-        if (patientName == null || patientName == string.Empty)
-        {
-            Console.WriteLine("Помилка: немає пацієнта");
-            return -1m;
-        }
-
-        if (patientEmail == null || !patientEmail.Contains('@'))
-        {
-            Console.WriteLine("Помилка: пошта пацієнта");
-            return -1m;
-        }
-
-        if (lines == null || lines.Count == 0)
-        {
-            Console.WriteLine("Помилка: немає препаратів");
-            return -1m;
-        }
-
-        if (status != "New" && status != "Approved"
-            && status != "Dispensed" && status != "Cancelled")
-        {
-            Console.WriteLine("Помилка: невідомий стан");
-            return -1m;
-        }
-
         for (int i = 0; i < lines.Count; i++)
         {
-            if (lines[i].Quantity <= 0)
-            {
-                Console.WriteLine("Помилка: кількість");
-                return -1m;
-            }
-
-            if (lines[i].UnitPrice < 0)
-            {
-                Console.WriteLine("Помилка: ціна");
-                return -1m;
-            }
-
             decimal sum = lines[i].Quantity * lines[i].UnitPrice;
 
             if (lines[i].Quantity >= 10)
@@ -133,18 +99,18 @@ public static class LegacyPrescriptionProcessor
 
         total = Math.Round(total, 2);
 
-        if (status == "New" && total > 0)
+        if (status == DocumentStatus.New && total > 0)
         {
-            newStatus = "Approved";
+            newStatus = DocumentStatus.Approved;
         }
-        else if (status == "Approved")
+        else if (status == DocumentStatus.Approved)
         {
-            newStatus = "Dispensed";
+            newStatus = DocumentStatus.Dispensed;
         }
-        else if (status == "Cancelled")
+        else if (status == DocumentStatus.Cancelled)
         {
-            newStatus = "Cancelled";
-            total = 0;
+            newStatus = DocumentStatus.Cancelled;
+            total = 0m;
         }
 
         if (printToConsole)
@@ -161,6 +127,7 @@ public static class LegacyPrescriptionProcessor
 
             Console.WriteLine(
                 "Разом: " + total.ToString(CultureInfo.CurrentCulture));
+
             Console.WriteLine("Стан: " + newStatus);
         }
 
