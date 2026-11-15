@@ -1,5 +1,3 @@
-using PharmacyStock.Core.Legacy;
-
 namespace PharmacyStock.Core.Documents;
 
 /// <summary>
@@ -7,6 +5,39 @@ namespace PharmacyStock.Core.Documents;
 /// </summary>
 public static class DocumentTotalCalculator
 {
+    /// <summary>
+    /// Calculates a prescription using one request object.
+    /// </summary>
+    /// <param name="request">Prescription request.</param>
+    /// <returns>Calculated amount and resulting status.</returns>
+    public static TotalResult Calculate(TotalRequest request)
+    {
+        DocumentGuards.EnsureRequestValid(request);
+
+        decimal total = SubtotalOf(request.Lines);
+
+        total -= ClientDiscountOf(
+            total, request.Client.IsRegular);
+
+        total -= VolumeDiscountOf(total);
+
+        total -= CouponDiscountOf(
+            total, request.CouponCode);
+
+        total -= WeekendDiscountOf(
+            total, request.CreatedAt);
+
+        total += DeliveryFeeOf(
+            total, request.DeliveryPrice);
+
+        total = request.Status == DocumentStatus.Cancelled
+            ? 0m
+            : Math.Round(Math.Max(total, 0m), 2);
+
+        return new TotalResult(
+            total, NextStatusOf(request.Status, total));
+    }
+
     /// <summary>
     /// Calculates the subtotal of medicine lines.
     /// </summary>
@@ -51,7 +82,7 @@ public static class DocumentTotalCalculator
     }
 
     /// <summary>
-    /// Calculates the discount based on total amount.
+    /// Calculates the volume discount.
     /// </summary>
     /// <param name="amount">Current amount.</param>
     /// <returns>The discount amount.</returns>

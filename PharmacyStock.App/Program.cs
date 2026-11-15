@@ -1,15 +1,34 @@
 using System.Text;
-using PharmacyStock.Core.Domain;
+using PharmacyStock.Core.Documents;
 
 Console.OutputEncoding = Encoding.UTF8;
 
-var prescription = new PrescriptionRecord("R-1001", "Черевко");
+TotalRequest request = new(
+    DocumentId: 1,
+    Client: new ClientInfo(
+        "Іваненко", "i@ex.com", true),
+    Lines: new List<MedicineLine>
+    {
+        new()
+        {
+            MedicineCode = "MED-1",
+            Quantity = 12,
+            UnitPrice = 100m,
+        },
+        new()
+        {
+            MedicineCode = "MED-2",
+            Quantity = 1,
+            UnitPrice = 250m,
+        },
+    },
+    CreatedAt: new DateOnly(2026, 3, 10),
+    CouponCode: null,
+    Status: DocumentStatus.New,
+    DeliveryPrice: 60m);
 
-prescription.AddLine("MED-1", 3, 250m);
-prescription.AddLine("MED-2", 12, 90m);
+TotalResult result =
+    DocumentTotalCalculator.Calculate(request);
 
-Console.WriteLine(prescription.CalculateTotal(false));
-Console.WriteLine(prescription.CalculateTotal(true));
-Console.WriteLine(prescription.IsValid());
-Console.WriteLine(prescription.TryChangeStatus(1));
-Console.Write(prescription.BuildReport());
+Console.WriteLine(result.Total);
+Console.WriteLine(result.Status);

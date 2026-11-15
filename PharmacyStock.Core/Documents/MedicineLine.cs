@@ -1,4 +1,4 @@
-namespace PharmacyStock.Core.Legacy;
+namespace PharmacyStock.Core.Documents;
 
 /// <summary>
 /// Represents a medicine line in a prescription.

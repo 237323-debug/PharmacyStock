@@ -1,5 +1,3 @@
-using PharmacyStock.Core.Legacy;
-
 namespace PharmacyStock.Core.Documents;
 
 /// <summary>
@@ -7,6 +5,26 @@ namespace PharmacyStock.Core.Documents;
 /// </summary>
 public static class DocumentGuards
 {
+    /// <summary>
+    /// Validates the complete prescription request.
+    /// </summary>
+    /// <param name="request">Prescription request.</param>
+    public static void EnsureRequestValid(TotalRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.Client);
+
+        EnsureHeaderValid(
+            request.DocumentId,
+            request.Client.Name,
+            request.Client.Email);
+
+        EnsureLinesValid(request.Lines);
+
+        ArgumentOutOfRangeException.ThrowIfNegative(
+            request.DeliveryPrice);
+    }
+
     /// <summary>
     /// Validates the prescription header.
     /// </summary>
