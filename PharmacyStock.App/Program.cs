@@ -1,31 +1,15 @@
-using System.Globalization;
+using System.Text;
 using PharmacyStock.Core.Domain;
 
-Prescription prescription = new()
-{
-    Id = 1,
-    PatientId = 10,
-    CreatedAt = DateTimeOffset.Now,
-};
+Console.OutputEncoding = Encoding.UTF8;
 
-prescription.AddItem(new PrescriptionItem
-{
-    MedicineCode = "MED-001",
-    Quantity = 2,
-    UnitPrice = 120.50m,
-});
+var z = new recept("R-1001", "Іваненко");
 
-prescription.AddItem(new PrescriptionItem
-{
-    MedicineCode = "MED-002",
-    Quantity = 1,
-    UnitPrice = 89.90m,
-});
+z.Add("MED-1", 3, 250m);
+z.Add("MED-2", 12, 90m);
 
-string total = prescription.Total()
-    .ToString("F2", CultureInfo.InvariantCulture);
-
-Console.WriteLine($"Рецепт №{prescription.Id}");
-Console.WriteLine($"Стан: {prescription.Status}");
-Console.WriteLine($"Препаратів: {prescription.Items.Count}");
-Console.WriteLine($"Сума: {total}");
+Console.WriteLine(z.ProcessData(false));
+Console.WriteLine(z.ProcessData(true));
+Console.WriteLine(z.Ck());
+Console.WriteLine(z.Chg(1));
+Console.Write(z.Rep());
