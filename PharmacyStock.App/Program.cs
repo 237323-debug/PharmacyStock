@@ -13,6 +13,7 @@ using PharmacyStock.Core.Storage;
 
 Console.OutputEncoding = Encoding.UTF8;
 
+// Приклад роботи лабораторної № 3.
 TotalRequest request = new(
     DocumentId: 1,
     Client: new ClientInfo(
@@ -37,7 +38,9 @@ TotalRequest request = new(
     Status: DocumentStatus.New,
     DeliveryPrice: 60m);
 
-TotalResult result = DocumentTotalCalculator.Calculate(request);
+TotalResult result =
+    DocumentTotalCalculator.Calculate(request);
+
 string report = DocumentReport.TextOf(request, result);
 
 DocumentReportPrinter printer = new(Console.Out);
@@ -45,6 +48,7 @@ printer.Print(report);
 
 Console.WriteLine();
 
+// Приклад роботи лабораторної № 4.
 Dictionary<string, IPricingPolicy> policies = new()
 {
     ["regular"] = new DiscountPricingPolicy(0.05m),
@@ -60,17 +64,14 @@ IPricingPolicy pricing =
 
 InMemoryPrescriptionRepository repository = new();
 
-INotifier notifier = new TextWriterNotifier(Console.Out);
+INotifier notifier =
+    new TextWriterNotifier(Console.Out);
 
-PrescriptionService service = new(
-    repository,
-    pricing,
-    notifier);
+PrescriptionService service =
+    new(repository, pricing, notifier);
 
-Prescription prescription = new(
-    2,
-    1,
-    DateTimeOffset.UtcNow);
+Prescription prescription =
+    new(2, 1, DateTimeOffset.UtcNow);
 
 prescription.AddItem(
     new PrescriptionItem("MED-3", 2, 250m));
@@ -100,30 +101,69 @@ string csv = PrescriptionCsvReport.BuildCsv(
 Console.WriteLine("CSV-звіт:");
 Console.Write(csv);
 
+// Лабораторна № 5. Повторне введення даних.
 Console.WriteLine();
-Console.WriteLine("Перевірка барикади введення:");
+Console.WriteLine("Додавання нового препарату до рецепта № 2.");
 
-Result<PrescriptionItem> invalid =
-    PrescriptionItemParser.Parse(
-        "MED-4",
-        "дві",
-        "100,50");
-
-if (!invalid.IsSuccess)
+while (true)
 {
-    Console.WriteLine("Помилка вводу: " + invalid.Error);
-}
+    Console.Write("Введіть код препарату: ");
+    string? medicineCode = Console.ReadLine();
 
-Result<PrescriptionItem> valid =
-    PrescriptionItemParser.Parse(
-        "MED-4",
-        "2",
-        "100,50");
+    if (medicineCode is null)
+    {
+        Console.WriteLine("Введення завершено.");
+        break;
+    }
 
-if (valid.IsSuccess && valid.Value is not null)
-{
-    service.AddItem(prescription.Id, valid.Value);
+    Console.Write("Введіть кількість: ");
+    string? quantityText = Console.ReadLine();
 
-    Console.WriteLine(
-        "Позицію MED-4 успішно додано до рецепта № 2.");
+    if (quantityText is null)
+    {
+        Console.WriteLine("Введення завершено.");
+        break;
+    }
+
+    Console.Write("Введіть ціну: ");
+    string? priceText = Console.ReadLine();
+
+    if (priceText is null)
+    {
+        Console.WriteLine("Введення завершено.");
+        break;
+    }
+
+    Result<PrescriptionItem> parsed =
+        PrescriptionItemParser.Parse(
+            medicineCode,
+            quantityText,
+            priceText);
+
+    if (!parsed.IsSuccess)
+    {
+        Console.WriteLine(
+            "Помилка вводу: " + parsed.Error);
+
+        Console.WriteLine("Спробуйте ввести дані ще раз.");
+        Console.WriteLine();
+
+        continue;
+    }
+
+    if (parsed.Value is not PrescriptionItem item)
+    {
+        throw new InvalidOperationException(
+            "Результат перевірки не містить препарату.");
+    }
+
+    service.AddItem(prescription.Id, item);
+
+    Console.WriteLine("Препарат успішно додано до рецепта.");
+    Console.WriteLine(string.Format(
+        CultureInfo.GetCultureInfo("uk-UA"),
+        "Нова сума рецепта: {0:F2}",
+        service.TotalOf(prescription)));
+
+    break;
 }
