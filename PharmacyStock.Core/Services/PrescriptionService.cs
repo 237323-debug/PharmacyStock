@@ -20,7 +20,7 @@ public sealed class PrescriptionService
     /// </summary>
     /// <param name="repository">Prescription repository.</param>
     /// <param name="pricing">Pricing policy.</param>
-    /// <param name="notifier">Patient notifier.</param>
+    /// <param name="notifier">Notification service.</param>
     public PrescriptionService(
         IPrescriptionRepository repository,
         IPricingPolicy pricing,
@@ -57,10 +57,7 @@ public sealed class PrescriptionService
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(prescriptionId);
         ArgumentNullException.ThrowIfNull(item);
 
-        Prescription prescription = _repository.GetById(prescriptionId)
-            ?? throw new DomainRuleException(
-                "prescription.exists",
-                $"Рецепт № {prescriptionId} не знайдено.");
+        Prescription prescription = _repository.GetById(prescriptionId);
 
         if (prescription.Status != PrescriptionStatus.New)
         {
@@ -73,10 +70,10 @@ public sealed class PrescriptionService
     }
 
     /// <summary>
-    /// Calculates the total using the selected pricing policy.
+    /// Calculates prescription total using the pricing policy.
     /// </summary>
-    /// <param name="prescription">Prescription to calculate.</param>
-    /// <returns>Calculated amount.</returns>
+    /// <param name="prescription">Prescription.</param>
+    /// <returns>Calculated total.</returns>
     public decimal TotalOf(Prescription prescription)
     {
         ArgumentNullException.ThrowIfNull(prescription);

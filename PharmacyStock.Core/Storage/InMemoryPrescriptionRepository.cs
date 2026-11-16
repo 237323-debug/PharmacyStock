@@ -1,5 +1,6 @@
 using PharmacyStock.Core.Abstractions;
 using PharmacyStock.Core.Domain;
+using PharmacyStock.Core.Errors;
 
 namespace PharmacyStock.Core.Storage;
 
@@ -11,7 +12,7 @@ public sealed class InMemoryPrescriptionRepository : IPrescriptionRepository
     private readonly Dictionary<int, Prescription> _prescriptions = new();
 
     /// <summary>
-    /// Adds a prescription to memory storage.
+    /// Adds a prescription to storage.
     /// </summary>
     /// <param name="prescription">Prescription to add.</param>
     public void Add(Prescription prescription)
@@ -26,23 +27,29 @@ public sealed class InMemoryPrescriptionRepository : IPrescriptionRepository
     }
 
     /// <summary>
-    /// Finds a prescription by identifier.
+    /// Gets a prescription by identifier.
     /// </summary>
     /// <param name="id">Prescription identifier.</param>
-    /// <returns>Prescription or null if not found.</returns>
-    public Prescription? GetById(int id)
+    /// <returns>The requested prescription.</returns>
+    public Prescription GetById(int id)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(id);
 
-        return _prescriptions.TryGetValue(id, out Prescription? prescription)
-            ? prescription
-            : null;
+        if (!_prescriptions.TryGetValue(
+            id, out Prescription? prescription))
+        {
+            throw new DomainRuleException(
+                "prescription.exists",
+                $"Рецепт № {id} не знайдено.");
+        }
+
+        return prescription;
     }
 
     /// <summary>
     /// Returns all stored prescriptions.
     /// </summary>
-    /// <returns>Copy of the prescription list.</returns>
+    /// <returns>Copy of stored prescriptions.</returns>
     public IReadOnlyList<Prescription> GetAll()
     {
         return _prescriptions.Values.ToList().AsReadOnly();

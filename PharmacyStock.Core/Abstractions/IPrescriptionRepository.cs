@@ -14,15 +14,18 @@ public interface IPrescriptionRepository
     void Add(Prescription prescription);
 
     /// <summary>
-    /// Finds a prescription by identifier.
+    /// Gets a prescription by identifier.
     /// </summary>
     /// <param name="id">Prescription identifier.</param>
-    /// <returns>Prescription or null if not found.</returns>
-    Prescription? GetById(int id);
+    /// <returns>The requested prescription.</returns>
+    /// <exception cref="PharmacyStock.Core.Errors.DomainRuleException">
+    /// Thrown when the prescription does not exist.
+    /// </exception>
+    Prescription GetById(int id);
 
     /// <summary>
     /// Returns all stored prescriptions.
     /// </summary>
-    /// <returns>List of prescriptions.</returns>
+    /// <returns>Stored prescriptions.</returns>
     IReadOnlyList<Prescription> GetAll();
 }
