@@ -55,32 +55,10 @@ public class LegacyPrescriptionProcessor
 
         _log.Add("ok " + docId);
 
-        _tmpSum = 0m;
-        for (int i = 0; i < items.Count; i++)
-        {
-            _tmpSum += items[i].Qty * items[i].Price;
-        }
-
+        _tmpSum = Subtotal(items);
         ClientKind kind = LegacyTypeParser.KindOf(clientKind);
-        _tmpDiscount = 0m;
-        if (kind == ClientKind.Vip)
-        {
-            _tmpDiscount = _tmpSum * PricingRules.VipRate;
-            if (_tmpDiscount > PricingRules.MaxDiscount) _tmpDiscount = PricingRules.MaxDiscount;
-        }
-        else if (kind == ClientKind.Staff)
-        {
-            _tmpDiscount = _tmpSum * PricingRules.StaffRate;
-            if (_tmpDiscount > PricingRules.MaxDiscount) _tmpDiscount = PricingRules.MaxDiscount;
-        }
-        else if (clientDone > PricingRules.LoyalOrders)
-        {
-            _tmpDiscount = _tmpSum * PricingRules.LoyalRate;
-            if (_tmpDiscount > PricingRules.MaxDiscount) _tmpDiscount = PricingRules.MaxDiscount;
-        }
-
-        decimal ship = 0m;
-        if (_tmpSum - _tmpDiscount < PricingRules.FreeShipFrom) ship = PricingRules.ShipCost;
+        _tmpDiscount = DiscountOf(_tmpSum, kind, clientDone);
+        decimal ship = ShippingOf(_tmpSum - _tmpDiscount);
         decimal total = _tmpSum - _tmpDiscount + ship;
 
         string txt = "Документ #" + docId + "\n";
@@ -133,6 +111,48 @@ public class LegacyPrescriptionProcessor
         decimal sh = 0m;
         if (s - d < PricingRules.FreeShipFrom) sh = PricingRules.ShipCost;
         return s - d + sh;
+    }
+
+
+    private static decimal Subtotal(List<PrescriptionLine> items)
+    {
+        decimal sum = 0m;
+        for (int i = 0; i < items.Count; i++)
+        {
+            sum += items[i].Qty * items[i].Price;
+        }
+        return sum;
+    }
+
+    private static decimal DiscountOf(decimal subtotal, ClientKind kind, int clientDone)
+    {
+        decimal discount = 0m;
+        if (kind == ClientKind.Vip)
+        {
+            discount = subtotal * PricingRules.VipRate;
+            if (discount > PricingRules.MaxDiscount) discount = PricingRules.MaxDiscount;
+        }
+        else if (kind == ClientKind.Staff)
+        {
+            discount = subtotal * PricingRules.StaffRate;
+            if (discount > PricingRules.MaxDiscount) discount = PricingRules.MaxDiscount;
+        }
+        else if (clientDone > PricingRules.LoyalOrders)
+        {
+            discount = subtotal * PricingRules.LoyalRate;
+            if (discount > PricingRules.MaxDiscount) discount = PricingRules.MaxDiscount;
+        }
+        return discount;
+    }
+
+    private static decimal ShippingOf(decimal payable)
+    {
+        decimal ship = 0m;
+        if (payable < PricingRules.FreeShipFrom)
+        {
+            ship = PricingRules.ShipCost;
+        }
+        return ship;
     }
 
     public string DescribeClient(PatientRecord c)
