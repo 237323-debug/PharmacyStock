@@ -26,6 +26,9 @@ public class LegacyPrescriptionProcessor
     private decimal _tmpSum;
     private decimal _tmpDiscount;
     private readonly List<string> _log = new();
+    private readonly DiscountPolicy _discountPolicy = new();
+    private readonly ShippingPolicy _shippingPolicy = new();
+    private readonly ReportBuilder _reportBuilder = new();
 
     public string Handle(int docId, int clientId,
         string clientName, string? clientMail,
@@ -57,24 +60,12 @@ public class LegacyPrescriptionProcessor
 
         _tmpSum = Subtotal(items);
         ClientKind kind = LegacyTypeParser.KindOf(clientKind);
-        _tmpDiscount = DiscountOf(_tmpSum, kind, clientDone);
-        decimal ship = ShippingOf(_tmpSum - _tmpDiscount);
+        _tmpDiscount = _discountPolicy.For(_tmpSum, kind, clientDone);
+        decimal ship = _shippingPolicy.For(_tmpSum - _tmpDiscount);
         decimal total = _tmpSum - _tmpDiscount + ship;
 
-        string txt = "Документ #" + docId + "\n";
-        txt += "Клієнт: " + clientName + "\n";
-        for (int i = 0; i < items.Count; i++)
-        {
-            txt += items[i].Code + " x" + items[i].Qty + " = " +
-                (items[i].Qty * items[i].Price)
-                    .ToString("0.00") + " " + currency + "\n";
-        }
-        txt += "Знижка: " + _tmpDiscount.ToString("0.00") +
-            " " + currency + "\n";
-        txt += "Доставка: " + ship.ToString("0.00") +
-            " " + currency + "\n";
-        txt += "Разом: " + total.ToString("0.00") +
-            " " + currency + "\n";
+        string txt = _reportBuilder.Build(
+            docId, clientName, items, currency, _tmpDiscount, ship, total);
 
         if (sendMail)
         {
@@ -88,8 +79,8 @@ public class LegacyPrescriptionProcessor
     {
         decimal subtotal = Subtotal(items);
         ClientKind kind = LegacyTypeParser.KindOf(clientKind);
-        decimal discount = DiscountOf(subtotal, kind, clientDone);
-        decimal shipping = ShippingOf(subtotal - discount);
+        decimal discount = _discountPolicy.For(subtotal, kind, clientDone);
+        decimal shipping = _shippingPolicy.For(subtotal - discount);
         return subtotal - discount + shipping;
     }
 
@@ -102,37 +93,6 @@ public class LegacyPrescriptionProcessor
             sum += items[i].Qty * items[i].Price;
         }
         return sum;
-    }
-
-    private static decimal DiscountOf(decimal subtotal, ClientKind kind, int clientDone)
-    {
-        decimal discount = 0m;
-        if (kind == ClientKind.Vip)
-        {
-            discount = subtotal * PricingRules.VipRate;
-            if (discount > PricingRules.MaxDiscount) discount = PricingRules.MaxDiscount;
-        }
-        else if (kind == ClientKind.Staff)
-        {
-            discount = subtotal * PricingRules.StaffRate;
-            if (discount > PricingRules.MaxDiscount) discount = PricingRules.MaxDiscount;
-        }
-        else if (clientDone > PricingRules.LoyalOrders)
-        {
-            discount = subtotal * PricingRules.LoyalRate;
-            if (discount > PricingRules.MaxDiscount) discount = PricingRules.MaxDiscount;
-        }
-        return discount;
-    }
-
-    private static decimal ShippingOf(decimal payable)
-    {
-        decimal ship = 0m;
-        if (payable < PricingRules.FreeShipFrom)
-        {
-            ship = PricingRules.ShipCost;
-        }
-        return ship;
     }
 
     public string DescribeClient(PatientRecord c)
