@@ -37,9 +37,7 @@ public sealed class LegacyCharacterizationTests
         };
 
         LegacyPrescriptionProcessor sut = new();
-        string actual = sut.Handle(
-            1001, 7, "Іван", mail, "regular", 0,
-            items, state, "UAH", new DateTime(2026, 3, 1), false);
+        string actual = sut.Handle(CreateRequest(items, state, mail));
 
         Assert.Equal(expected, actual);
     }
@@ -50,9 +48,8 @@ public sealed class LegacyCharacterizationTests
     {
         LegacyPrescriptionProcessor sut = new();
 
-        string actual = sut.Handle(
-            1001, 7, "Іван", "a@b.c", "vip", 3,
-            TwoLines(), "new", "UAH", new DateTime(2026, 3, 1), false);
+        string actual = sut.Handle(CreateRequest(
+            TwoLines(), "new", "a@b.c", "vip", 3));
 
         string expected =
             "Документ #1001\n" +
@@ -121,9 +118,8 @@ public sealed class LegacyCharacterizationTests
     public void DumpLogAfterHandlingIncludesMail()
     {
         LegacyPrescriptionProcessor sut = new();
-        sut.Handle(
-            1001, 7, "Іван", "a@b.c", "regular", 0,
-            TwoLines(), "new", "UAH", new DateTime(2026, 3, 1), true);
+        sut.Handle(CreateRequest(
+            TwoLines(), "new", "a@b.c", sendMail: true));
 
         Assert.Equal("ok 1001\nmail -> a@b.c\n", sut.DumpLog());
     }
@@ -139,6 +135,34 @@ public sealed class LegacyCharacterizationTests
         };
 
         Assert.Equal(9500m, sut.Preview("vip", 0, items));
+    }
+
+    private static PrescriptionRequest CreateRequest(
+        List<PrescriptionLine>? items,
+        string state,
+        string? mail,
+        string kind = "regular",
+        int done = 0,
+        bool sendMail = false)
+    {
+        DocState documentState = state switch
+        {
+            "new" => DocState.New,
+            "paid" => DocState.Paid,
+            _ => DocState.Draft,
+        };
+
+        PatientRecord patient = new()
+        {
+            Id = 7,
+            Name = "Іван",
+            Email = mail ?? string.Empty,
+            Kind = kind,
+            DoneCount = done,
+        };
+
+        return new PrescriptionRequest(
+            1001, patient, items, documentState, "UAH", sendMail);
     }
 
     private static List<PrescriptionLine> TwoLines()

@@ -30,12 +30,9 @@ public class LegacyPrescriptionProcessor
     private readonly ShippingPolicy _shippingPolicy = new();
     private readonly ReportBuilder _reportBuilder = new();
 
-    public string Handle(int docId, int clientId,
-        string clientName, string? clientMail,
-        string clientKind, int clientDone,
-        List<PrescriptionLine>? items, string state,
-        string currency, DateTime createdAt, bool sendMail)
+    public string Handle(PrescriptionRequest request)
     {
+        List<PrescriptionLine>? items = request.Items;
         if (items is null)
         {
             return "ERR: null";
@@ -46,30 +43,31 @@ public class LegacyPrescriptionProcessor
             return "ERR: empty";
         }
 
-        if (LegacyTypeParser.StateOf(state) is not (DocState.New or DocState.Paid))
+        if (request.State is not (DocState.New or DocState.Paid))
         {
             return "ERR: state";
         }
 
-        if (clientMail is null || !clientMail.Contains("@"))
+        if (request.Patient.Email is null || !request.Patient.Email.Contains("@"))
         {
             return "ERR: mail";
         }
 
-        _log.Add("ok " + docId);
+        _log.Add("ok " + request.DocId);
 
         _tmpSum = Subtotal(items);
-        ClientKind kind = LegacyTypeParser.KindOf(clientKind);
-        _tmpDiscount = _discountPolicy.For(_tmpSum, kind, clientDone);
+        ClientKind kind = LegacyTypeParser.KindOf(request.Patient.Kind);
+        _tmpDiscount = _discountPolicy.For(_tmpSum, kind, request.Patient.DoneCount);
         decimal ship = _shippingPolicy.For(_tmpSum - _tmpDiscount);
         decimal total = _tmpSum - _tmpDiscount + ship;
 
         string txt = _reportBuilder.Build(
-            docId, clientName, items, currency, _tmpDiscount, ship, total);
+            request.DocId, request.Patient.Name, items, request.Currency,
+            _tmpDiscount, ship, total);
 
-        if (sendMail)
+        if (request.SendMail)
         {
-            _log.Add("mail -> " + clientMail);
+            _log.Add("mail -> " + request.Patient.Email);
         }
         return txt;
     }
