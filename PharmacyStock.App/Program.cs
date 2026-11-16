@@ -1,8 +1,10 @@
 using System.Globalization;
 using System.Text;
+using PharmacyStock.App.Input;
 using PharmacyStock.Core.Abstractions;
 using PharmacyStock.Core.Documents;
 using PharmacyStock.Core.Domain;
+using PharmacyStock.Core.Errors;
 using PharmacyStock.Core.Notifications;
 using PharmacyStock.Core.Pricing;
 using PharmacyStock.Core.Reporting;
@@ -35,9 +37,7 @@ TotalRequest request = new(
     Status: DocumentStatus.New,
     DeliveryPrice: 60m);
 
-TotalResult result =
-    DocumentTotalCalculator.Calculate(request);
-
+TotalResult result = DocumentTotalCalculator.Calculate(request);
 string report = DocumentReport.TextOf(request, result);
 
 DocumentReportPrinter printer = new(Console.Out);
@@ -60,14 +60,17 @@ IPricingPolicy pricing =
 
 InMemoryPrescriptionRepository repository = new();
 
-INotifier notifier =
-    new TextWriterNotifier(Console.Out);
+INotifier notifier = new TextWriterNotifier(Console.Out);
 
-PrescriptionService service =
-    new(repository, pricing, notifier);
+PrescriptionService service = new(
+    repository,
+    pricing,
+    notifier);
 
-Prescription prescription =
-    new(2, 1, DateTimeOffset.UtcNow);
+Prescription prescription = new(
+    2,
+    1,
+    DateTimeOffset.UtcNow);
 
 prescription.AddItem(
     new PrescriptionItem("MED-3", 2, 250m));
@@ -96,3 +99,31 @@ string csv = PrescriptionCsvReport.BuildCsv(
 
 Console.WriteLine("CSV-звіт:");
 Console.Write(csv);
+
+Console.WriteLine();
+Console.WriteLine("Перевірка барикади введення:");
+
+Result<PrescriptionItem> invalid =
+    PrescriptionItemParser.Parse(
+        "MED-4",
+        "дві",
+        "100,50");
+
+if (!invalid.IsSuccess)
+{
+    Console.WriteLine("Помилка вводу: " + invalid.Error);
+}
+
+Result<PrescriptionItem> valid =
+    PrescriptionItemParser.Parse(
+        "MED-4",
+        "2",
+        "100,50");
+
+if (valid.IsSuccess && valid.Value is not null)
+{
+    service.AddItem(prescription.Id, valid.Value);
+
+    Console.WriteLine(
+        "Позицію MED-4 успішно додано до рецепта № 2.");
+}

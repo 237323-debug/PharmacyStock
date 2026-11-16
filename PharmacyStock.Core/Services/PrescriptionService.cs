@@ -1,6 +1,7 @@
 using System.Globalization;
 using PharmacyStock.Core.Abstractions;
 using PharmacyStock.Core.Domain;
+using PharmacyStock.Core.Errors;
 
 namespace PharmacyStock.Core.Services;
 
@@ -47,6 +48,31 @@ public sealed class PrescriptionService
     }
 
     /// <summary>
+    /// Adds a validated item to an existing prescription.
+    /// </summary>
+    /// <param name="prescriptionId">Prescription identifier.</param>
+    /// <param name="item">Validated medicine item.</param>
+    public void AddItem(int prescriptionId, PrescriptionItem item)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(prescriptionId);
+        ArgumentNullException.ThrowIfNull(item);
+
+        Prescription prescription = _repository.GetById(prescriptionId)
+            ?? throw new DomainRuleException(
+                "prescription.exists",
+                $"Рецепт № {prescriptionId} не знайдено.");
+
+        if (prescription.Status != PrescriptionStatus.New)
+        {
+            throw new DomainRuleException(
+                "prescription.editable",
+                "Додавати препарати можна лише до нового рецепта.");
+        }
+
+        prescription.AddItem(item);
+    }
+
+    /// <summary>
     /// Calculates the total using the selected pricing policy.
     /// </summary>
     /// <param name="prescription">Prescription to calculate.</param>
@@ -71,7 +97,8 @@ public sealed class PrescriptionService
     /// <param name="prescription">Prescription.</param>
     /// <param name="recipient">Patient email.</param>
     public void NotifyPatient(
-        Prescription prescription, string recipient)
+        Prescription prescription,
+        string recipient)
     {
         ArgumentNullException.ThrowIfNull(prescription);
         ArgumentException.ThrowIfNullOrWhiteSpace(recipient);
