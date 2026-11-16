@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using PharmacyStock.App.Files;
 using PharmacyStock.App.Input;
 using PharmacyStock.Core.Abstractions;
 using PharmacyStock.Core.Documents;
@@ -14,7 +15,7 @@ using PharmacyStock.Core.Storage;
 
 Console.OutputEncoding = Encoding.UTF8;
 
-// Налаштування журналу.
+// Налаштування журналу подій.
 using ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
 {
     builder.AddSimpleConsole(options =>
@@ -30,7 +31,7 @@ using ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
 ILogger<PrescriptionService> logger =
     loggerFactory.CreateLogger<PrescriptionService>();
 
-// Приклад лабораторної № 3.
+// Лабораторна № 3.
 TotalRequest request = new(
     DocumentId: 1,
     Client: new ClientInfo(
@@ -65,7 +66,7 @@ printer.Print(report);
 
 Console.WriteLine();
 
-// Приклад лабораторної № 4.
+// Лабораторна № 4.
 Dictionary<string, IPricingPolicy> policies = new()
 {
     ["regular"] = new DiscountPricingPolicy(0.05m),
@@ -122,7 +123,7 @@ string csv = PrescriptionCsvReport.BuildCsv(
 Console.WriteLine("CSV-звіт:");
 Console.Write(csv);
 
-// Лабораторна № 5. Введення даних.
+// Лабораторна № 5. Перевірка введення.
 Console.WriteLine();
 Console.WriteLine("Додавання нового препарату до рецепта № 2.");
 
@@ -188,7 +189,7 @@ while (true)
     break;
 }
 
-// Демонстрація чотирьох рівнів логування.
+// Лабораторна № 5. Демонстрація логування.
 Console.WriteLine();
 Console.WriteLine("Демонстрація журналу подій:");
 
@@ -209,7 +210,6 @@ service.AddItem(
 demo.Approve();
 demo.Dispense();
 
-// Спроба змінити вже виданий рецепт.
 try
 {
     service.AddItem(
@@ -222,7 +222,6 @@ catch (DomainRuleException ex)
     Console.WriteLine(ex.Message);
 }
 
-// Спроба скасувати вже виданий рецепт.
 try
 {
     service.Cancel(demo.Id, "Демонстрація помилки");
@@ -232,3 +231,71 @@ catch (DomainRuleException ex)
     Console.WriteLine("Правило: " + ex.Rule);
     Console.WriteLine(ex.Message);
 }
+
+// Лабораторна № 5. Завдання № 7.
+Console.WriteLine();
+Console.WriteLine("Демонстрація роботи з файлами:");
+
+string logsDirectory = Path.Combine(
+    Environment.CurrentDirectory,
+    "logs");
+
+Directory.CreateDirectory(logsDirectory);
+
+string auditPath = Path.Combine(
+    logsDirectory,
+    "prescriptions.log");
+
+string reportPath = Path.Combine(
+    logsDirectory,
+    "prescription-report.txt");
+
+// Навмисно створюємо помилку під час експорту.
+// using повинен закрити обидва файлові ресурси.
+try
+{
+    using FileAuditLog audit = new(auditPath);
+
+    audit.Write("Початок експорту", prescription.Id);
+
+    PrescriptionReportExporter.Export(
+        reportPath,
+        prescription,
+        static _ => throw new InvalidOperationException("Тестова помилка розрахунку."));
+}
+catch (InvalidOperationException ex)
+{
+    Console.WriteLine("Помилка експорту: " + ex.Message);
+}
+
+// Повторно відкриваємо файл після винятку.
+using (FileAuditLog audit = new(auditPath))
+{
+    audit.Write(
+        "Повторне відкриття після помилки",
+        prescription.Id);
+
+    PrescriptionReportExporter.Export(
+        reportPath,
+        prescription,
+        service.TotalOf);
+
+    audit.Write(
+        "Успішний експорт",
+        prescription.Id);
+}
+
+Console.WriteLine("Файл аудиту успішно відкрито повторно.");
+Console.WriteLine("Звіт успішно збережено.");
+
+Console.WriteLine();
+Console.WriteLine("Файл аудиту:");
+Console.WriteLine(auditPath);
+
+Console.WriteLine();
+Console.WriteLine("Файл звіту:");
+Console.WriteLine(reportPath);
+
+Console.WriteLine();
+Console.WriteLine("Вміст звіту:");
+Console.WriteLine(File.ReadAllText(reportPath));

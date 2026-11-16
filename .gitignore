@@ -485,3 +485,6 @@ $RECYCLE.BIN/
 # Власні винятки проєкту
 *.user
 data/*.local.json
+# PharmacyStock runtime files
+logs/
+*.log
