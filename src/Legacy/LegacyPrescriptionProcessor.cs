@@ -37,7 +37,7 @@ public class LegacyPrescriptionProcessor
         {
             if (items.Count > 0)
             {
-                if (state == "new" || state == "paid")
+                if (LegacyTypeParser.StateOf(state) is DocState.New or DocState.Paid)
                 {
                     if (clientMail != null &&
                         clientMail.Contains("@"))
@@ -70,13 +70,14 @@ public class LegacyPrescriptionProcessor
             _tmpSum += items[i].Qty * items[i].Price;
         }
 
+        ClientKind kind = LegacyTypeParser.KindOf(clientKind);
         _tmpDiscount = 0m;
-        if (clientKind == "vip")
+        if (kind == ClientKind.Vip)
         {
             _tmpDiscount = _tmpSum * PricingRules.VipRate;
             if (_tmpDiscount > PricingRules.MaxDiscount) _tmpDiscount = PricingRules.MaxDiscount;
         }
-        else if (clientKind == "staff")
+        else if (kind == ClientKind.Staff)
         {
             _tmpDiscount = _tmpSum * PricingRules.StaffRate;
             if (_tmpDiscount > PricingRules.MaxDiscount) _tmpDiscount = PricingRules.MaxDiscount;
@@ -121,13 +122,14 @@ public class LegacyPrescriptionProcessor
         {
             s += it.Qty * it.Price;
         }
+        ClientKind kind = LegacyTypeParser.KindOf(clientKind);
         decimal d = 0m;
-        if (clientKind == "vip")
+        if (kind == ClientKind.Vip)
         {
             d = s * PricingRules.VipRate;
             if (d > PricingRules.MaxDiscount) d = PricingRules.MaxDiscount;
         }
-        else if (clientKind == "staff")
+        else if (kind == ClientKind.Staff)
         {
             d = s * PricingRules.StaffRate;
             if (d > PricingRules.MaxDiscount) d = PricingRules.MaxDiscount;
@@ -144,8 +146,9 @@ public class LegacyPrescriptionProcessor
 
     public string DescribeClient(PatientRecord c)
     {
+        ClientKind kind = LegacyTypeParser.KindOf(c.Kind);
         string s = c.Name.Trim().ToUpper();
-        if (c.Kind == "vip") s += " [VIP]";
+        if (kind == ClientKind.Vip) s += " [VIP]";
         if (c.DoneCount > PricingRules.LoyalOrders) s += " [ЛОЯЛЬНИЙ]";
         s += " <" + c.Email.ToLower() + ">";
         int years = DateTime.Now.Year - c.SinceUtc.Year;
