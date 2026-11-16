@@ -38,8 +38,6 @@ public class PrescriptionLine
 
 public class LegacyPrescriptionProcessor
 {
-    private decimal _tmpSum;
-    private decimal _tmpDiscount;
     private readonly List<string> _log = new();
     private readonly DiscountPolicy _discountPolicy = new();
     private readonly ShippingPolicy _shippingPolicy = new();
@@ -70,15 +68,16 @@ public class LegacyPrescriptionProcessor
 
         _log.Add("ok " + request.DocId);
 
-        _tmpSum = Subtotal(items);
+        decimal subtotal = Subtotal(items);
         ClientKind kind = LegacyTypeParser.KindOf(request.Patient.Kind);
-        _tmpDiscount = _discountPolicy.For(_tmpSum, kind, request.Patient.DoneCount);
-        decimal ship = _shippingPolicy.For(_tmpSum - _tmpDiscount);
-        decimal total = _tmpSum - _tmpDiscount + ship;
+        decimal discount = _discountPolicy.For(
+            subtotal, kind, request.Patient.DoneCount);
+        decimal shipping = _shippingPolicy.For(subtotal - discount);
+        decimal total = subtotal - discount + shipping;
 
         string txt = _reportBuilder.Build(
             request.DocId, request.Patient.Name, items, request.Currency,
-            _tmpDiscount, ship, total);
+            discount, shipping, total);
 
         if (request.SendMail)
         {
