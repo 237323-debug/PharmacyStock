@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{68D24264-E62
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PharmacyStock.Legacy", "src\Legacy\PharmacyStock.Legacy.csproj", "{C05A5D75-9A25-4C21-ABCE-C0A5D68BAC55}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PharmacyStock.Legacy.Tests", "tests\Legacy.Tests\PharmacyStock.Legacy.Tests.csproj", "{75DA2FA4-AC9B-449A-BFE5-CE0DE18E60B4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,9 +42,14 @@ Global
 		{C05A5D75-9A25-4C21-ABCE-C0A5D68BAC55}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C05A5D75-9A25-4C21-ABCE-C0A5D68BAC55}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C05A5D75-9A25-4C21-ABCE-C0A5D68BAC55}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75DA2FA4-AC9B-449A-BFE5-CE0DE18E60B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75DA2FA4-AC9B-449A-BFE5-CE0DE18E60B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75DA2FA4-AC9B-449A-BFE5-CE0DE18E60B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75DA2FA4-AC9B-449A-BFE5-CE0DE18E60B4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{BE0BC300-5355-4103-9BDA-85AFE4071D5D} = {E3F66E63-BF72-4C4A-99F3-F6BC4DB22068}
 		{C05A5D75-9A25-4C21-ABCE-C0A5D68BAC55} = {68D24264-E627-41EA-83E5-A9E19A2E68A7}
+		{75DA2FA4-AC9B-449A-BFE5-CE0DE18E60B4} = {E3F66E63-BF72-4C4A-99F3-F6BC4DB22068}
 	EndGlobalSection
 EndGlobal
