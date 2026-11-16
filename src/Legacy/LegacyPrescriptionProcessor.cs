@@ -86,31 +86,11 @@ public class LegacyPrescriptionProcessor
     public decimal Preview(string clientKind, int clientDone,
         List<PrescriptionLine> items)
     {
-        decimal s = 0m;
-        foreach (var it in items)
-        {
-            s += it.Qty * it.Price;
-        }
+        decimal subtotal = Subtotal(items);
         ClientKind kind = LegacyTypeParser.KindOf(clientKind);
-        decimal d = 0m;
-        if (kind == ClientKind.Vip)
-        {
-            d = s * PricingRules.VipRate;
-            if (d > PricingRules.MaxDiscount) d = PricingRules.MaxDiscount;
-        }
-        else if (kind == ClientKind.Staff)
-        {
-            d = s * PricingRules.StaffRate;
-            if (d > PricingRules.MaxDiscount) d = PricingRules.MaxDiscount;
-        }
-        else if (clientDone > PricingRules.LoyalOrders)
-        {
-            d = s * PricingRules.LoyalRate;
-            if (d > PricingRules.MaxDiscount) d = PricingRules.MaxDiscount;
-        }
-        decimal sh = 0m;
-        if (s - d < PricingRules.FreeShipFrom) sh = PricingRules.ShipCost;
-        return s - d + sh;
+        decimal discount = DiscountOf(subtotal, kind, clientDone);
+        decimal shipping = ShippingOf(subtotal - discount);
+        return subtotal - discount + shipping;
     }
 
 
