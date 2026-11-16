@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using PharmacyStock.App.Input;
 using PharmacyStock.Core.Abstractions;
 using PharmacyStock.Core.Documents;
@@ -13,7 +14,23 @@ using PharmacyStock.Core.Storage;
 
 Console.OutputEncoding = Encoding.UTF8;
 
-// Приклад роботи лабораторної № 3.
+// Налаштування журналу.
+using ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
+{
+    builder.AddSimpleConsole(options =>
+    {
+        options.TimestampFormat = "HH:mm:ss ";
+        options.IncludeScopes = true;
+        options.SingleLine = true;
+    });
+
+    builder.SetMinimumLevel(LogLevel.Debug);
+});
+
+ILogger<PrescriptionService> logger =
+    loggerFactory.CreateLogger<PrescriptionService>();
+
+// Приклад лабораторної № 3.
 TotalRequest request = new(
     DocumentId: 1,
     Client: new ClientInfo(
@@ -48,7 +65,7 @@ printer.Print(report);
 
 Console.WriteLine();
 
-// Приклад роботи лабораторної № 4.
+// Приклад лабораторної № 4.
 Dictionary<string, IPricingPolicy> policies = new()
 {
     ["regular"] = new DiscountPricingPolicy(0.05m),
@@ -64,14 +81,18 @@ IPricingPolicy pricing =
 
 InMemoryPrescriptionRepository repository = new();
 
-INotifier notifier =
-    new TextWriterNotifier(Console.Out);
+INotifier notifier = new TextWriterNotifier(Console.Out);
 
-PrescriptionService service =
-    new(repository, pricing, notifier);
+PrescriptionService service = new(
+    repository,
+    pricing,
+    notifier,
+    logger);
 
-Prescription prescription =
-    new(2, 1, DateTimeOffset.UtcNow);
+Prescription prescription = new(
+    2,
+    1,
+    DateTimeOffset.UtcNow);
 
 prescription.AddItem(
     new PrescriptionItem("MED-3", 2, 250m));
@@ -101,7 +122,7 @@ string csv = PrescriptionCsvReport.BuildCsv(
 Console.WriteLine("CSV-звіт:");
 Console.Write(csv);
 
-// Лабораторна № 5. Повторне введення даних.
+// Лабораторна № 5. Введення даних.
 Console.WriteLine();
 Console.WriteLine("Додавання нового препарату до рецепта № 2.");
 
@@ -142,9 +163,7 @@ while (true)
 
     if (!parsed.IsSuccess)
     {
-        Console.WriteLine(
-            "Помилка вводу: " + parsed.Error);
-
+        Console.WriteLine("Помилка вводу: " + parsed.Error);
         Console.WriteLine("Спробуйте ввести дані ще раз.");
         Console.WriteLine();
 
@@ -160,10 +179,56 @@ while (true)
     service.AddItem(prescription.Id, item);
 
     Console.WriteLine("Препарат успішно додано до рецепта.");
+
     Console.WriteLine(string.Format(
         CultureInfo.GetCultureInfo("uk-UA"),
         "Нова сума рецепта: {0:F2}",
         service.TotalOf(prescription)));
 
     break;
+}
+
+// Демонстрація чотирьох рівнів логування.
+Console.WriteLine();
+Console.WriteLine("Демонстрація журналу подій:");
+
+Prescription demo = new(
+    3,
+    1,
+    DateTimeOffset.UtcNow);
+
+demo.AddItem(
+    new PrescriptionItem("MED-LOG", 1, 100m));
+
+service.Place(demo);
+
+service.AddItem(
+    demo.Id,
+    new PrescriptionItem("MED-LOG-2", 1, 50m));
+
+demo.Approve();
+demo.Dispense();
+
+// Спроба змінити вже виданий рецепт.
+try
+{
+    service.AddItem(
+        demo.Id,
+        new PrescriptionItem("MED-LOG-3", 1, 20m));
+}
+catch (DomainRuleException ex)
+{
+    Console.WriteLine("Правило: " + ex.Rule);
+    Console.WriteLine(ex.Message);
+}
+
+// Спроба скасувати вже виданий рецепт.
+try
+{
+    service.Cancel(demo.Id, "Демонстрація помилки");
+}
+catch (DomainRuleException ex)
+{
+    Console.WriteLine("Правило: " + ex.Rule);
+    Console.WriteLine(ex.Message);
 }

@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\PharmacyStock.Core\PharmacyStock.Core.csproj" />
+    <ProjectReference Include="..\..\PharmacyStock.App\PharmacyStock.App.csproj" />
   </ItemGroup>
 
 </Project>
