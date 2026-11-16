@@ -11,6 +11,21 @@ public class PatientRecord
     public string Kind = "regular";
     public int DoneCount;
     public DateTime SinceUtc;
+
+    /// <summary>
+    /// Describes the patient using the original legacy text format.
+    /// </summary>
+    public string Describe()
+    {
+        ClientKind kind = LegacyTypeParser.KindOf(Kind);
+        string s = Name.Trim().ToUpper();
+        if (kind == ClientKind.Vip) s += " [VIP]";
+        if (DoneCount > PricingRules.LoyalOrders) s += " [ЛОЯЛЬНИЙ]";
+        s += " <" + Email.ToLower() + ">";
+        int years = DateTime.Now.Year - SinceUtc.Year;
+        s += " стаж " + years;
+        return s;
+    }
 }
 
 public class PrescriptionLine
@@ -91,18 +106,6 @@ public class LegacyPrescriptionProcessor
             sum += items[i].Qty * items[i].Price;
         }
         return sum;
-    }
-
-    public string DescribeClient(PatientRecord c)
-    {
-        ClientKind kind = LegacyTypeParser.KindOf(c.Kind);
-        string s = c.Name.Trim().ToUpper();
-        if (kind == ClientKind.Vip) s += " [VIP]";
-        if (c.DoneCount > PricingRules.LoyalOrders) s += " [ЛОЯЛЬНИЙ]";
-        s += " <" + c.Email.ToLower() + ">";
-        int years = DateTime.Now.Year - c.SinceUtc.Year;
-        s += " стаж " + years;
-        return s;
     }
 
     public string DumpLog()

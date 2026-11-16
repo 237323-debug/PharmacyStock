@@ -109,8 +109,7 @@ public sealed class LegacyCharacterizationTests
         string expected = "ІВАН [VIP] [ЛОЯЛЬНИЙ] " +
             "<ivan@mail.com> стаж " + years.ToString(CultureInfo.InvariantCulture);
 
-        LegacyPrescriptionProcessor sut = new();
-        Assert.Equal(expected, sut.DescribeClient(patient));
+        Assert.Equal(expected, patient.Describe());
     }
 
     /// <summary>Checks the exact log text after successful handling.</summary>
