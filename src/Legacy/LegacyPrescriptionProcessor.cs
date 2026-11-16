@@ -33,36 +33,27 @@ public class LegacyPrescriptionProcessor
         List<PrescriptionLine>? items, string state,
         string currency, DateTime createdAt, bool sendMail)
     {
-        if (items != null)
-        {
-            if (items.Count > 0)
-            {
-                if (LegacyTypeParser.StateOf(state) is DocState.New or DocState.Paid)
-                {
-                    if (clientMail != null &&
-                        clientMail.Contains("@"))
-                    {
-                        _log.Add("ok " + docId);
-                    }
-                    else
-                    {
-                        return "ERR: mail";
-                    }
-                }
-                else
-                {
-                    return "ERR: state";
-                }
-            }
-            else
-            {
-                return "ERR: empty";
-            }
-        }
-        else
+        if (items is null)
         {
             return "ERR: null";
         }
+
+        if (items.Count == 0)
+        {
+            return "ERR: empty";
+        }
+
+        if (LegacyTypeParser.StateOf(state) is not (DocState.New or DocState.Paid))
+        {
+            return "ERR: state";
+        }
+
+        if (clientMail is null || !clientMail.Contains("@"))
+        {
+            return "ERR: mail";
+        }
+
+        _log.Add("ok " + docId);
 
         _tmpSum = 0m;
         for (int i = 0; i < items.Count; i++)
